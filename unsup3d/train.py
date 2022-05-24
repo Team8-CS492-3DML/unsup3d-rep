@@ -113,12 +113,10 @@ class Trainer():
             #weight_decay=5e-4       # from author's code setting (05/22 inhee)
         )
 
-        '''
         self.scheduler = optims.lr_scheduler.LambdaLR(
             optimizer = self.optimizer,
-            lr_lambda = lambda epoch: 0.95 ** epoch,
+            lr_lambda = lambda epoch: 0.99 ** epoch,
         )
-        '''
 
         '''load_model and optimizer state'''
         if self.load_chk:
@@ -142,8 +140,10 @@ class Trainer():
 
             self.writer.add_scalar("loss_epch/train", epch_loss, self.epoch)
 
+            '''
             if self.epoch % self.fig_epoch == 0:
                 self.model.visualize(self.epoch)
+            '''
 
     def _train(self):
         '''train model (single epoch)'''
@@ -174,8 +174,8 @@ class Trainer():
             if i % 50 == 0:
                 self.model.visualize(self.step)
         
-        #self.scheduler.step()
-        return epch_loss/cnt
+        self.scheduler.step()
+        return epch_loss / cnt
 
     def load_model(self, PATH):
         '''

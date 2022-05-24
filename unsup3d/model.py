@@ -58,9 +58,20 @@ class PhotoGeoAE(nn.Module):
         
 
     def get_photo_loss(self, img1, img2, conf, mask = None):
+        '''
         losses = torch.abs(img1 - img2)
         num_cases = img1.shape[1] * img1.shape[2] * img1.shape[3]
         loss = torch.sum(losses, dim=(1, 2, 3)) / num_cases
+        '''
+        L1_loss = torch.abs(img1 - img2)
+        losses = L1_loss *2**0.5 / (conf + EPS) + torch.log(conf + EPS)
+
+        if mask is not None:
+            losses = losses * mask
+            loss = torch.sum(losses, dim = (1,2,3)) / (torch.sum(mask, dim = (1,2,3))+EPS)
+        else:
+            num_cases = img1.shape[1] * img1.shape[2] * img1.shape[3]
+            loss = torch.sum(losses, dim=(1, 2, 3)) / num_cases
 
         return loss
 
@@ -153,12 +164,11 @@ class PhotoGeoAE(nn.Module):
         self.tot_loss = self.org_loss + self.lambda_f * self.flip_loss
 
         '''for BFM dataset, calculate 3D reconstruction accuracy (SIDE, MAD)'''
-        '''
+
         if self.use_gt_depth:
             bfm_metrics = BFM_Metrics(org_depth, self.gt_depth)
             self.side_error = bfm_metrics.SIDE_error()
             self.mad_error = bfm_metrics.MAD_error()
-        '''
 
         '''
         if plot_interms:
@@ -248,10 +258,8 @@ class PhotoGeoAE(nn.Module):
 
         add_image_log('image_decomposition/input_img', self.input, epoch)
 
-        '''
         if self.use_gt_depth:
             add_image_log('image_decomposition/gt_depth', self.gt_depth, epoch)
-        '''
 
         add_image_log('reconstruction/recon_output', self.recon_output, epoch)
         add_image_log('reconstruction/f_recon_output', self.f_recon_output, epoch)
@@ -274,12 +282,10 @@ class PhotoGeoAE(nn.Module):
         self.logger.add_scalar('losses/tot_loss', torch.mean(self.tot_loss), epoch)
         self.logger.add_scalar('losses/L1_loss', self.L1_loss, epoch)
 
-        '''
         if self.use_gt_depth:
             
-            self.logger.add_scalar('losses/side_error', self.side_error, epoch)
-            self.logger.add_scalar('losses/mad_error', self.mad_error, epoch)
-        '''
+            self.logger.add_scalar('bfm_losses/side_error', self.side_error, epoch)
+            self.logger.add_scalar('bfm_losses/mad_error', self.mad_error, epoch)
 
 
     def set_logger(self, writer):
@@ -315,6 +321,10 @@ class PercepLoss(nn.Module):
         - loss: perceptual loss (real number)
         calculate PercepLoss based on L1 distance & confidence
         '''
+
+        img1 = (img1+1.)/2.
+        img2 = (img2+1.)/2.
+
         n_img1 = self.transforms(img1)
         n_img2 = self.transforms(img2)
 
