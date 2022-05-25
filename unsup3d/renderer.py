@@ -173,6 +173,8 @@ class RenderPipeline(nn.Module):
 
         # allow extra margin
         margin = (self.max_depth - self.min_depth) / 2
+        # margin = (self.max_depth - self.min_depth)
+
         org_depth = org_depth.clamp(min = self.min_depth - margin, max = self.max_depth + margin)
         
         return org_depth.unsqueeze(1)
@@ -277,26 +279,3 @@ class RenderPipeline(nn.Module):
         org_img = self.get_org_image(warp_grid, canon_img)
 
         return org_img, org_depth
-
-
-    ######################################################## DANGER!!!!! Author's code ###############
-    def depth2normal_author(self, depth):
-        b, _, h, w = depth.shape
-        canon_pc = self.canon_depth_to_3d(depth)
-        grid_3d = canon_pc.permute(0,2,3,1)
-
-        tu = grid_3d[:,1:-1,2:] - grid_3d[:,1:-1,:-2]
-        tv = grid_3d[:,2:,1:-1] - grid_3d[:,:-2,1:-1]
-        normal = tu.cross(tv, dim=3)
-
-        zero = torch.FloatTensor([0,0,1]).to(depth.device)
-        normal = torch.cat([zero.repeat(b,h-2,1,1), normal, zero.repeat(b,h-2,1,1)], 2)
-        normal = torch.cat([zero.repeat(b,1,w,1), normal, zero.repeat(b,1,w,1)], 1)
-        normal = normal / (((normal**2).sum(3, keepdim=True))**0.5 + EPS)
-        return normal.permute(0,3,1,2)
-
-        
-
-####################################################################
-# functions below here will be moved to utils later (05/13, inhee) #
-####################################################################

@@ -30,13 +30,13 @@ class ImageDecomp(nn.Module):
 
     def get_depth_map(self, input):
         raw_res = self.depth_net(input)
+
         # normalize
         raw_res = raw_res - torch.mean(raw_res, dim = (1,2,3), keepdim=True)
-        res = raw_res.tanh()
 
-        res = 1.0 + res/10.0
-
-        res = res*(1-self.depth_border) + self.depth_border *self.border_depth  # border clamping
+        res = raw_res.tanh() / 10.0 + 1.0
+        
+        res = res * (1-self.depth_border) + self.depth_border * self.border_depth  # border clamping
 
         return res
     

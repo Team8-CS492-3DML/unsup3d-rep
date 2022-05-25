@@ -52,46 +52,14 @@ class ImageFormation():
 
         v1 = depth_pc[:, :, 1:-1, 2:] - depth_pc[:, :, 1:-1, :-2]
         v2 = depth_pc[:, :, 2:, 1:-1] - depth_pc[:, :, :-2, 1:-1]
-        d = torch.cross(v2, v1, dim=1)
-        
+        normal = v1.cross(v2, dim=1)
+
         zero_pad = nn.ZeroPad2d(1)
-        normal = d / (torch.sqrt(torch.sum(d ** 2, dim=1, keepdim=True)) + EPS)
         normal = zero_pad(normal)
+        normal = normal / (torch.sqrt(torch.sum(normal ** 2, dim=1, keepdim=True)) + EPS)
 
         return normal
     
-    
-    # def depth_to_normal(self, depth_map):
-    #     '''
-    #     - input:
-    #         depth_map: B x 1 x W x H
-    #     - output:
-    #         normal_map: B x 3 x W x H
-    #     '''
-    #     B, _,  W, H = depth_map.shape 
-
-    #     ''''''
-    #     x_range = torch.linspace(0, H - 1, H, dtype=torch.float32, device=self.device)
-    #     y_range = torch.linspace(0, W - 1, W, dtype=torch.float32, device=self.device)
-
-    #     x_grid, y_grid = torch.meshgrid(x_range, y_range, indexing = 'ij')
-    #     x_grid = x_grid.unsqueeze(0).unsqueeze(0).repeat(B, 1, 1, 1)
-    #     y_grid = y_grid.unsqueeze(0).unsqueeze(0).repeat(B, 1, 1, 1)
-
-    #     depth_x_s = torch.zeros_like(depth_map, device=self.device)
-    #     depth_y_s = torch.zeros_like(depth_map, device=self.device)
-    #     depth_x_s[:, :, 1:W, :] = depth_map[:, :, 0:W-1, :]
-    #     depth_y_s[:, :, :, 1:H] = depth_map[:, :, :, 0:H-1]
-
-    #     v1 = torch.cat([x_grid, (y_grid - 1), depth_y_s], dim=1)
-    #     v2 = torch.cat([(x_grid - 1), y_grid, depth_x_s], dim=1)
-    #     c = torch.cat([x_grid, y_grid, depth_map], dim=1)
-
-    #     d = torch.cross(v2 - c, v1 - c, dim=1)
-    #     normal_map = d / (torch.sqrt(torch.sum(d ** 2, dim=1, keepdim=True)) + EPS)
-
-    #     # return normal_map *2.-1.  
-    #     return normal_map
 
     def normal_to_shading(self, normal_map, lighting):
         '''
@@ -133,9 +101,6 @@ class ImageFormation():
         canon_view = albedo * shading_map
 
         return canon_view *2.-1.
-        # return torch.clamp(canon_view *2.-1., max=1.0)
-        # return canon_view
-
 
 def get_mask(depth):
     '''

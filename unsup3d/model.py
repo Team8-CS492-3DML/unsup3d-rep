@@ -21,8 +21,6 @@ from unsup3d.utils import get_mask
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 EPS = 1e-7
-author_test = False
-
 
 class PhotoGeoAE(nn.Module):
     def __init__(self, configs):
@@ -114,10 +112,7 @@ class PhotoGeoAE(nn.Module):
 
         '''implement some pipeline'''
         # unflipped case
-        if author_test:
-            self.normal = self.render.depth2normal_author(self.depth)
-        else:
-            self.normal = self.imgForm.depth_to_normal(self.depth)                  # B x 3 x W x H
+        self.normal = self.imgForm.depth_to_normal(self.depth)                  # B x 3 x W x H
         self.shading = self.imgForm.normal_to_shading(self.normal, self.light)  # B x 1 x W x H 
         self.canon_img = self.imgForm.alb_to_canon(self.albedo, self.shading)   # B x 3 x W x H
 
@@ -126,10 +121,7 @@ class PhotoGeoAE(nn.Module):
                                          views=self.view)
 
         # flipped case
-        if author_test:
-            self.f_normal = self.render.depth2normal_author(self.f_depth)
-        else:
-            self.f_normal = self.imgForm.depth_to_normal(self.f_depth)             # B x 3 x W x H
+        self.f_normal = self.imgForm.depth_to_normal(self.f_depth)             # B x 3 x W x H
         self.f_shading = self.imgForm.normal_to_shading(self.f_normal, self.light)  # B x 1 x W x H 
         self.f_canon_img = self.imgForm.alb_to_canon(self.f_albedo, self.f_shading) # B x 3 x W x H
 
@@ -234,8 +226,6 @@ class PhotoGeoAE(nn.Module):
 
         add_image_log('image_decomposition/depth', (self.depth -0.9)*5.0, epoch, False)
         add_image_log('image_decomposition/albedo', self.albedo, epoch, False)
-        # add_image_log('image_decomposition/view', self.view, epoch)
-        # add_image_log('image_decomposition/light', self.light, epoch)
 
         add_image_log('image_decomposition/conf_percep', self.conf_percep, epoch)
         add_image_log('image_decomposition/conf', self.conf, epoch)
