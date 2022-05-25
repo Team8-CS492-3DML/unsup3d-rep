@@ -237,11 +237,13 @@ class PhotoGeoAE(nn.Module):
 
         add_image_log('image_decomposition/normal', self.normal, epoch)
         add_image_log('image_decomposition/shading', self.shading, epoch)
-        add_image_log('image_decomposition/canon_img', self.canon_img, epoch, False)
+        # add_image_log('image_decomposition/canon_img', self.canon_img, epoch, False)
+        add_image_log('image_decomposition/canon_img', self.canon_img, epoch)
 
         add_image_log('image_decomposition/f_normal', self.f_normal, epoch)
         add_image_log('image_decomposition/f_shading', self.f_shading, epoch)
-        add_image_log('image_decomposition/f_canon_img', self.f_canon_img, epoch, False)
+        # add_image_log('image_decomposition/f_canon_img', self.f_canon_img, epoch, False)
+        add_image_log('image_decomposition/f_canon_img', self.f_canon_img, epoch)
 
         add_image_log('to_debug/input_img', self.input, epoch, False)
         add_image_log('to_debug/depth_mask', self.mask_depth, epoch)

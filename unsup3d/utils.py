@@ -101,6 +101,7 @@ class ImageFormation():
         canon_view = albedo * shading_map
 
         return canon_view *2.-1.
+        # return torch.clamp(canon_view *2.-1., max=1.0, min=-1.0)
 
 def get_mask(depth):
     '''
