@@ -54,6 +54,7 @@ class PhotoGeoAE(nn.Module):
         self.imgForm = ImageFormation(device=device, size=64)
         self.render = RenderPipeline(device=device, b_size=self.b_size)
         
+        
 
     def get_photo_loss(self, img1, img2, conf, mask = None):
         '''
@@ -66,7 +67,7 @@ class PhotoGeoAE(nn.Module):
 
         if mask is not None:
             losses = losses * mask
-            loss = torch.sum(losses, dim = (1,2,3)) / (torch.sum(mask, dim = (1,2,3))+EPS)
+            loss = torch.sum(losses, dim = (1,2,3)) / (torch.sum(mask, dim = (1,2,3)) + EPS)
         else:
             num_cases = img1.shape[1] * img1.shape[2] * img1.shape[3]
             loss = torch.sum(losses, dim=(1, 2, 3)) / num_cases
@@ -146,11 +147,17 @@ class PhotoGeoAE(nn.Module):
         '''calculate loss'''
         self.L1_loss = torch.abs(self.recon_output - input).mean()
         self.percep_loss = self.percep(input, self.recon_output, self.conf_percep, mask_depth) # (b_size)
+        
         self.photo_loss = self.get_photo_loss(input, self.recon_output, self.conf, mask_depth)  # (b_size)
+        # self.photo_loss = self.get_photo_loss(input, self.recon_output, self.conf)  # (b_size)
+
         self.org_loss = self.photo_loss + self.lambda_p * self.percep_loss          # (b_size)
         
         self.f_percep_loss = self.percep(input, self.f_recon_output, self.f_conf_percep, mask_depth) # (b_size)
+        
         self.f_photo_loss = self.get_photo_loss(input, self.f_recon_output, self.f_conf, mask_depth)  # (b_size)
+        # self.f_photo_loss = self.get_photo_loss(input, self.f_recon_output, self.f_conf)  # (b_size)
+        
         self.flip_loss = self.f_photo_loss + self.lambda_p * self.f_percep_loss           # (b_size)
         
         self.tot_loss = self.org_loss + self.lambda_f * self.flip_loss
@@ -237,6 +244,7 @@ class PhotoGeoAE(nn.Module):
 
         add_image_log('image_decomposition/normal', self.normal, epoch)
         add_image_log('image_decomposition/shading', self.shading, epoch)
+        
         # add_image_log('image_decomposition/canon_img', self.canon_img, epoch, False)
         add_image_log('image_decomposition/canon_img', self.canon_img, epoch)
 

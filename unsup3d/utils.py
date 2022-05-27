@@ -53,6 +53,7 @@ class ImageFormation():
         v1 = depth_pc[:, :, 1:-1, 2:] - depth_pc[:, :, 1:-1, :-2]
         v2 = depth_pc[:, :, 2:, 1:-1] - depth_pc[:, :, :-2, 1:-1]
         normal = v1.cross(v2, dim=1)
+        # normal = torch.cross(v2, -v1, dim=1)
 
         zero_pad = nn.ZeroPad2d(1)
         normal = zero_pad(normal)

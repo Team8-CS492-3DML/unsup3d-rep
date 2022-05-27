@@ -110,8 +110,10 @@ class Trainer():
             params = self.model.parameters(),
             lr = self.learning_rate,
             betas=(0.9, 0.999), 
-            #weight_decay=5e-4       # from author's code setting (05/22 inhee)
+            weight_decay=5e-4       # from author's code setting (05/22 inhee)
         )
+
+        
 
         self.scheduler = optims.lr_scheduler.LambdaLR(
             optimizer = self.optimizer,
@@ -161,6 +163,9 @@ class Trainer():
             losses = self.model(inputs)
             loss = torch.mean(losses)
             loss.backward(retain_graph=True)
+            # loss.backward()
+
+            loss.backward()
             self.optimizer.step()
 
             # calculate epch_loss

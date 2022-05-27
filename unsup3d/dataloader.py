@@ -75,27 +75,28 @@ class BFM(Dataset):
         '''return both image and gt depth_map as tensor.'''
 
         '''resize image and gt_depth'''
-        img = cv2.imread(path.join(self.img_path, self.img_gt_pairs[idx][0]))
-        gt_depth = cv2.imread(path.join(self.gt_path, self.img_gt_pairs[idx][1]))
-
         try:
+            img = cv2.imread(path.join(self.img_path, self.img_gt_pairs[idx][0]))
+            gt_depth = cv2.imread(path.join(self.gt_path, self.img_gt_pairs[idx][1]))
+
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            re_depth = cv2.resize(gt_depth, self.img_size, interpolation = cv2.INTER_LINEAR)
+            re_depth = cv2.cvtColor(gt_depth, cv2.COLOR_BGR2GRAY)
+
+            re_img = cv2.resize(img, self.img_size, interpolation = cv2.INTER_LINEAR)
+            re_img = torch.tensor(re_img, dtype = torch.float32)
+            re_img = re_img.permute(2, 0, 1)                    # 3 x H x W
+            re_img /= MAX_PIX                                   # change value range 0~1
+
+            re_depth = cv2.resize(re_depth, self.img_size, interpolation = cv2.INTER_LINEAR)
+            re_depth = torch.tensor(re_depth, dtype = torch.float32).unsqueeze(-1)
+            re_depth = re_depth.permute(2, 0, 1)                  # 1 x H x W
+            re_depth /= MAX_PIX                                   # change value range 0~1
+
         except:
             return None
-
-        re_img = cv2.resize(img, self.img_size, interpolation = cv2.INTER_LINEAR)
-        re_img = torch.tensor(re_img, dtype = torch.float32)
-        re_img = re_img.permute(2, 0, 1)                    # 3 x H x W
-        re_img /= MAX_PIX                                   # change value range 0~1
-
-        re_depth = cv2.cvtColor(re_depth, cv2.COLOR_BGR2GRAY)
-        re_depth = torch.tensor(re_depth, dtype = torch.float32).unsqueeze(-1)
-        re_depth = re_depth.permute(2, 0, 1)                  # 1 x H x W
-        re_depth /= MAX_PIX                                   # change value range 0~1
         
-        return re_img, re_depth
+        return [re_img, re_depth]
     
     def __len__(self):
-        # return len(self.img_gt_pairs)
-        return 64 * 100
+        return len(self.img_gt_pairs)
+        # return 64 * 100
