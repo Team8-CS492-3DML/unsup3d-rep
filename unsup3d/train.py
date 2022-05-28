@@ -114,7 +114,6 @@ class Trainer():
         )
 
         
-
         self.scheduler = optims.lr_scheduler.LambdaLR(
             optimizer = self.optimizer,
             lr_lambda = lambda epoch: 0.99 ** epoch,
@@ -162,11 +161,12 @@ class Trainer():
 
             losses = self.model(inputs)
             loss = torch.mean(losses)
-            loss.backward(retain_graph=True)
+            # loss.backward(retain_graph=True)
             # loss.backward()
 
-            loss.backward()
-            self.optimizer.step()
+            # loss.backward()
+            # self.optimizer.step()
+            self.model.backward()
 
             # calculate epch_loss
             epch_loss += loss.detach().cpu()
@@ -179,7 +179,7 @@ class Trainer():
             if i % 50 == 0:
                 self.model.visualize(self.step)
         
-        self.scheduler.step()
+        # self.scheduler.step()
         return epch_loss / cnt
 
     def load_model(self, PATH):

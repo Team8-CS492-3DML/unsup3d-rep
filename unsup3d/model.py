@@ -53,15 +53,43 @@ class PhotoGeoAE(nn.Module):
         '''pipeline utils'''
         self.imgForm = ImageFormation(device=device, size=64)
         self.render = RenderPipeline(device=device, b_size=self.b_size)
+
+        '''test optimizers (05/27 Yuseung)'''
+
+        ######################## 'warning: from author's code!!! ########################
+        make_optimizer = lambda model: torch.optim.Adam(
+            filter(lambda p: p.requires_grad, model.parameters()),
+            lr=0.0001, 
+            betas=(0.9, 0.999), 
+            weight_decay=5e-4
+        )
+
+        self.net_list = ['depth_net', 'alb_net', 'light_net', 'view_net', 'conf_net']
+        self.optim_list = []
+
+        for net in self.net_list:
+            optim = make_optimizer(getattr(self.imgDecomp, net))
+            optim_name = net.replace('net', 'optimizer')
+            setattr(self, optim_name, optim)
+            self.optim_list.append(optim_name)
+
+    def backward(self):
+        for optim_name in self.optim_list:
+            getattr(self, optim_name).zero_grad()
+
+        # self.tot_loss.backward()
+        loss = torch.mean(self.tot_loss)
+        loss.backward()
+
+        for optim_name in self.optim_list:
+            getattr(self, optim_name).step()
+
+        ######################## 'warning: from author's code!!! ########################
+
         
         
 
     def get_photo_loss(self, img1, img2, conf, mask = None):
-        '''
-        losses = torch.abs(img1 - img2)
-        num_cases = img1.shape[1] * img1.shape[2] * img1.shape[3]
-        loss = torch.sum(losses, dim=(1, 2, 3)) / num_cases
-        '''
         L1_loss = torch.abs(img1 - img2)
         losses = L1_loss *2**0.5 / (conf + EPS) + torch.log(conf + EPS)
 
@@ -168,40 +196,6 @@ class PhotoGeoAE(nn.Module):
             bfm_metrics = BFM_Metrics(org_depth, self.gt_depth)
             self.side_error = bfm_metrics.SIDE_error()
             self.mad_error = bfm_metrics.MAD_error()
-
-        '''
-        if plot_interms:
-            interms = {
-                'depth':depth,
-                'albedo':albedo,
-                'canon_img':canon_img,
-                'f_canon_img':f_canon_img,
-                'org_depth':org_depth,
-                'f_org_depth':f_org_depth,
-                'org_img':org_img,
-                'f_org_img':f_org_img,
-                'input_img':input
-            }# intermediate image
-            self.visualize(interms)
-
-        losses = {
-            'peceploss':perceploss.mean().detach().cpu().item(),
-            'photoloss':photoloss.mean().detach().cpu().item(),
-            'org_loss':org_loss.mean().detach().cpu().item(),
-            'f_peceploss':f_perceploss.mean().detach().cpu().item(),
-            'f_photoloss':f_photoloss.mean().detach().cpu().item(),
-            'flip_loss':flip_loss.mean().detach().cpu().item(),
-            'tot_loss':tot_loss.mean().detach().cpu().item()
-        }
-        self.logger(losses, step)
-        '''
-
-        '''
-        if self.tot_loss.isnan().sum() != 0:
-            assert(0)
-        elif self.tot_loss.isinf().sum() != 0:
-            assert(0)
-        '''
 
         return self.tot_loss
 
